@@ -1,0 +1,28 @@
+Jun 10 14:23:01 webserver01 sshd[1234]: Failed password for root from 103.45.67.89 port 58321
+Jun 10 14:23:02 webserver01 sshd[1234]: Failed password for admin from 103.45.67.89 port 58322
+Jun 10 14:23:03 webserver01 sshd[1234]: Failed password for root from 103.45.67.89 port 58323
+Jun 10 14:23:04 webserver01 sshd[1234]: Failed password for user from 103.45.67.89 port 58324
+Jun 10 14:23:05 webserver01 sshd[1234]: Failed password for root from 103.45.67.89 port 58325
+
+Jun 10 14:23:06 webserver01 sshd[1234]: Accepted password for user from 192.168.1.5 port 22
+Jun 10 14:23:07 webserver01 sshd[1234]: Accepted password for admin from 192.168.1.10 port 22
+
+Jun 10 14:23:08 webserver01 kernel: eth0: RX buffer overflow detected
+Jun 10 14:23:09 webserver01 kernel: eth0: TX packet dropped
+
+Jun 10 14:23:10 webserver01 sshd[1234]: Failed password for root from 103.45.67.89 port 58326
+Jun 10 14:23:11 webserver01 sshd[1234]: Failed password for root from 103.45.67.89 port 58327
+
+Jun 10 14:23:12 firewall01 kernel[0]: BLOCKED: IN=eth0 SRC=10.0.0.8 DST=10.0.1.5 PROTO=TCP DPT=22
+Jun 10 14:23:13 firewall01 kernel[0]: BLOCKED: IN=eth0 SRC=10.0.0.9 DST=10.0.1.5 PROTO=TCP DPT=80
+
+Jun 10 14:23:14 dbserver01 mysqld[5678]: Access denied for user 'root'@'10.0.0.5'
+Jun 10 14:23:15 dbserver01 mysqld[5678]: Connection established for user 'app'@'10.0.0.6'
+
+Jun 10 14:23:16 proxyhost nginx: connect() failed (111: Connection refused) while connecting to 172.16.0.3
+Jun 10 14:23:17 proxyhost nginx: client connected from 172.16.0.4
+
+Jun 10 14:23:18 cronserver cron[9876]: (root) CMD (/usr/bin/backup.sh)
+Jun 10 14:23:19 cronserver cron[9876]: (root) CMD (/usr/bin/cleanup.sh)
+
+Jun 10 14:23:20 webserver01 sshd[1234]: Failed password for root from 103.45.67.89 port 58328
