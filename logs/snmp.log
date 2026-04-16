@@ -1,0 +1,28 @@
+SNMP Trap: linkDown from 192.168.1.1
+SNMP Trap: linkDown from 192.168.1.2
+SNMP Trap: linkDown from 192.168.1.3
+
+SNMP Trap: authenticationFailure from 10.0.0.5
+SNMP Trap: authenticationFailure from 10.0.0.5
+SNMP Trap: authenticationFailure from 10.0.0.5
+
+SNMP Trap: coldStart from 172.16.0.3
+SNMP Trap: warmStart from 172.16.0.4
+
+SNMP Trap: linkUp from 192.168.1.4
+SNMP Trap: linkUp from 192.168.1.5
+
+SNMP Trap: authenticationFailure from 10.0.0.6
+SNMP Trap: authenticationFailure from 10.0.0.6
+
+SNMP Trap: linkDown from 192.168.1.6
+SNMP Trap: linkDown from 192.168.1.7
+
+SNMP Trap: coldStart from 172.16.0.5
+SNMP Trap: warmStart from 172.16.0.6
+
+SNMP Trap: authenticationFailure from 10.0.0.7
+SNMP Trap: authenticationFailure from 10.0.0.7
+
+SNMP Trap: linkDown from 192.168.1.8
+SNMP Trap: linkDown from 192.168.1.9
