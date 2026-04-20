@@ -1,34 +1,27 @@
 """
 summarizer/llm_summarizer.py
 -----------------------------
-LLM-powered batch summary generator using Ollama (LLaMA 3).
+LLM-powered batch summary generator using Groq API (LLaMA 3).
 
 Optimised for real-time use:
-  - ONE Ollama call per batch (not per log)
-  - Short, token-capped prompt  (num_predict: 80)
+  - ONE Groq call per batch (not per log)
+  - Short, token-capped prompt  (max_tokens: 80)
   - Low temperature             (0.2) for fast, deterministic output
-  - 60-second timeout with graceful fallback
+  - Graceful fallback on any API error
   - CRITICAL/HIGH threats are surfaced first in the prompt
 """
 
-import json
 import logging
+import os
 
-import requests
+from groq import Groq
 
 logger = logging.getLogger(__name__)
 
-# ── Ollama configuration ──────────────────────────────────────────────────────
+# ── Groq configuration ────────────────────────────────────────────────────────
 
-OLLAMA_URL      = "http://localhost:11434/api/generate"
-OLLAMA_MODEL    = "llama3:8b"
-REQUEST_TIMEOUT = 60
-
-_OLLAMA_OPTIONS = {
-    "temperature": 0.2,
-    "top_p":       0.9,
-    "num_predict": 80,   # slightly wider budget to cover critical threat mention
-}
+_GROQ_MODEL  = "llama3-8b-8192"
+_groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 _FALLBACK = (
     "Suspicious or anomalous activity detected. "
@@ -119,38 +112,37 @@ def _build_single_prompt(log: dict) -> str:
     )
 
 
-# ── Shared Ollama caller ──────────────────────────────────────────────────────
+# ── Shared Groq caller ───────────────────────────────────────────────────────
 
-def _call_ollama(prompt: str) -> str:
+def _call_groq(prompt: str) -> str:
     """
-    POST a prompt to Ollama and return the response text.
+    Send a prompt to Groq and return the response text.
     All error paths return _FALLBACK — callers never need to handle exceptions.
     """
-    payload = {
-        "model":   OLLAMA_MODEL,
-        "prompt":  prompt,
-        "stream":  False,
-        "options": _OLLAMA_OPTIONS,
-    }
     try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
-        text = response.json().get("response", "").strip()
+        response = _groq_client.chat.completions.create(
+            model=_GROQ_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a cybersecurity SOC analyst. Be precise, technical, "
+                        "and concise. Always include numbers, thresholds, and confidence "
+                        "scores. Avoid generic explanations."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.2,
+            max_tokens=80,
+        )
+        text = response.choices[0].message.content.strip()
         if not text:
-            logger.warning("Ollama returned an empty response; using fallback.")
+            logger.warning("Groq returned an empty response; using fallback.")
             return _FALLBACK
         return text
-    except requests.exceptions.ConnectionError:
-        logger.warning("Ollama not reachable at %s; using fallback.", OLLAMA_URL)
-        return _FALLBACK
-    except requests.exceptions.Timeout:
-        logger.warning("Ollama timed out after %ss; using fallback.", REQUEST_TIMEOUT)
-        return _FALLBACK
-    except requests.exceptions.HTTPError as exc:
-        logger.error("Ollama HTTP error: %s; using fallback.", exc)
-        return _FALLBACK
-    except (json.JSONDecodeError, KeyError) as exc:
-        logger.error("Failed to parse Ollama response: %s; using fallback.", exc)
+    except Exception as exc:
+        logger.error("Groq API error: %s; using fallback.", exc)
         return _FALLBACK
 
 
@@ -165,8 +157,8 @@ def generate_batch_explanation(logs: list[dict]) -> str:
     if not logs:
         return _FALLBACK
     prompt = _build_batch_prompt(logs)
-    logger.debug("Sending batch prompt to Ollama (%d log(s)).", len(logs))
-    return _call_ollama(prompt)
+    logger.debug("Sending batch prompt to Groq (%d log(s)).", len(logs))
+    return _call_groq(prompt)
 
 
 def generate_explanation(log: dict) -> str:
@@ -175,5 +167,5 @@ def generate_explanation(log: dict) -> str:
     Kept for backward compatibility with the single-log /analyze endpoint.
     """
     prompt = _build_single_prompt(log)
-    logger.debug("Sending single-log prompt to Ollama.")
-    return _call_ollama(prompt)
+    logger.debug("Sending single-log prompt to Groq.")
+    return _call_groq(prompt)
