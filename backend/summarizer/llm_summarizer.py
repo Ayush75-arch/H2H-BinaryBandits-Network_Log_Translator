@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # ── Groq configuration ────────────────────────────────────────────────────────
 
-_GROQ_MODEL  = "llama3-8b-8192"
+_GROQ_MODEL  = "llama-3.1-8b-instant"
 _groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 _FALLBACK = (
@@ -105,9 +105,12 @@ def _build_single_prompt(log: dict) -> str:
         else "normal traffic"
     )
     return (
-        "Network security event. "
-        "Reply in 1-2 sentences only. No bullet points, no markdown, no lists. "
-        "State what happened and clearly say whether immediate action is needed.\n\n"
+        "Network security event requiring SOC analyst assessment. "
+        "Reply in exactly 2-3 sentences using this structure: "
+        "1) What pattern was observed (include IP and specifics). "
+        "2) Why this is a threat (attack technique and risk). "
+        "3) What action is required right now. "
+        "No bullet points, no markdown, no generic statements.\n\n"
         f"[{severity}] {source_ip}: {reason}"
     )
 
@@ -126,15 +129,19 @@ def _call_groq(prompt: str) -> str:
                 {
                     "role": "system",
                     "content": (
-                        "You are a cybersecurity SOC analyst. Be precise, technical, "
-                        "and concise. Always include numbers, thresholds, and confidence "
-                        "scores. Avoid generic explanations."
+                        "You are a senior SOC analyst writing structured threat assessments. "
+                        "Every response must follow this exact 3-part structure: "
+                        "[What happened — specific pattern with IP/counts]. "
+                        "[Why it is a threat — attack technique and risk]. "
+                        "[Impact and required action — what the analyst must do now]. "
+                        "Be specific, technical, and actionable. No generic statements. "
+                        "Include source IP, thresholds, and confidence where available."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.2,
-            max_tokens=80,
+            max_tokens=180,
         )
         text = response.choices[0].message.content.strip()
         if not text:

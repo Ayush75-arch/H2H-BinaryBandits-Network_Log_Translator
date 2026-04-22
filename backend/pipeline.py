@@ -111,42 +111,131 @@ def _compute_scores(ip_logs, is_compromised, attack_chain):
 
 
 def _advanced_explanation(log, confidence):
-    reason   = log.get("reason", "").lower()
-    severity = log.get("severity", "INFO")
-    src_ip   = log.get("source_ip", "unknown")
-    log_type = log.get("log_type", "unknown")
+    """
+    SOC-grade 3-part explanation: [Pattern]. [Threat meaning]. [Impact + action].
+    Each explanation is 2-3 sentences covering WHAT happened, WHY it matters, and WHAT to do.
+    """
+    reason    = log.get("reason", "").lower()
+    severity  = log.get("severity", "INFO")
+    src_ip    = log.get("source_ip", "unknown")
+    log_type  = log.get("log_type", "unknown")
+    raw_reason = log.get("reason", "Unknown")
 
     if "brute force" in reason:
-        return (f"Multiple failed SSH login attempts from {src_ip} within 60s exceed the brute-force "
-                f"threshold (≥3/min). High-probability automated credential attack. Confidence: {confidence}%")
+        return (
+            f"Repeated failed SSH login attempts from {src_ip} within a 60-second window exceed the brute-force threshold (>=3 failures/min), indicating an automated credential stuffing or dictionary attack. "
+            f"This pattern is a direct precursor to account compromise -- attackers systematically exhaust common passwords until authentication succeeds. "
+            f"Immediately block {src_ip} at the firewall, lock affected accounts, and enable multi-factor authentication to prevent unauthorized access (Confidence: {confidence}%)."
+        )
     if "single failed login" in reason:
-        return (f"Single failed SSH authentication from {src_ip}. Below brute-force threshold, "
-                f"but external failure should be monitored. Confidence: {confidence}%")
+        return (
+            f"A single failed SSH authentication attempt was observed from external host {src_ip}, which did not meet the automated brute-force threshold. "
+            f"While isolated failures can indicate mistyped credentials, external sources that fail authentication are indicators of opportunistic probing or early-stage reconnaissance. "
+            f"Monitor {src_ip} for repeat attempts and cross-correlate with firewall and VPC logs to determine if broader scanning activity is underway (Confidence: {confidence}%)."
+        )
     if "high traffic volume" in reason:
-        return (f"{src_ip} generated >5 VPC flow connections — possible exfiltration, DDoS staging, "
-                f"or scan tool. Confidence: {confidence}%")
+        return (
+            f"Source {src_ip} generated more than 5 simultaneous VPC flow connections, exceeding normal baseline thresholds for this network segment. "
+            f"Elevated outbound connection counts are consistent with data exfiltration staging, C2 beaconing, or deployment of scanning tools against internal targets. "
+            f"Isolate {src_ip} from outbound internet access, capture flow telemetry for forensic analysis, and escalate to IR if data sensitivity is high (Confidence: {confidence}%)."
+        )
     if "traffic spike" in reason:
-        return (f"Extreme packet/byte volume in single VPC flow from {src_ip}. "
-                f"Possible bulk data transfer or flood. Confidence: {confidence}%")
+        return (
+            f"An extreme spike in packet and byte volume was detected in a single VPC flow originating from {src_ip}, far exceeding normal throughput baselines. "
+            f"High-volume single-flow anomalies indicate bulk data transfers, network flooding, or active exfiltration of large datasets to an external destination. "
+            f"Rate-limit or block {src_ip} immediately, preserve full packet capture for forensic review, and investigate what data was potentially transferred (Confidence: {confidence}%)."
+        )
     if "repeated rejected" in reason:
-        return (f"Multiple REJECT VPC entries from {src_ip} — consistent with port scanning "
-                f"or service probing. Confidence: {confidence}%")
+        return (
+            f"Multiple REJECT entries in VPC flow logs from {src_ip} across consecutive connection attempts indicate systematic port or service probing. "
+            f"Repeated rejections across varying destination ports are a hallmark of automated port scanning -- the attacker is mapping open services for subsequent exploitation. "
+            f"Block {src_ip} at the perimeter, review which ports were probed, and verify no connections succeeded that may indicate service exposure (Confidence: {confidence}%)."
+        )
     if "authentication failures" in reason and log_type == "snmp":
-        return (f"SNMP auth failure trap from {src_ip}. Indicates unauthorized device "
-                f"management attempt or misconfigured NMS. Confidence: {confidence}%")
+        return (
+            f"SNMP authentication failure traps were received from {src_ip}, indicating repeated attempts to access network device management interfaces with invalid credentials or community strings. "
+            f"Unauthorized SNMP access would grant an attacker full visibility into network topology, device configs, and routing tables -- critical reconnaissance data for targeted attacks. "
+            f"Restrict SNMP access via ACLs to trusted management IPs only, rotate community strings immediately, and investigate whether {src_ip} has probed other management interfaces (Confidence: {confidence}%)."
+        )
     if "link flapping" in reason:
-        return (f"≥3 linkDown traps from {src_ip} in rapid succession. Possible hardware "
-                f"failure or deliberate network disruption. Confidence: {confidence}%")
+        return (
+            f"Three or more linkDown SNMP traps were received from {src_ip} in rapid succession, indicating repeated physical or logical interface instability. "
+            f"Link flapping at this frequency suggests either a failing hardware component, a misconfigured link, or deliberate physical-layer disruption targeting network availability. "
+            f"Dispatch a network engineer to inspect the affected interface, review STP logs for topology changes, and determine if the instability is hardware failure or deliberate interference (Confidence: {confidence}%)."
+        )
     if "port scan" in reason:
-        return (f"≥3 firewall DENYs from {src_ip} across different ports — automated port "
-                f"scan probing for open services. Confidence: {confidence}%")
+        return (
+            f"Three or more firewall DENY events from {src_ip} targeting different destination ports were detected, consistent with an automated port scan using tools such as nmap or masscan. "
+            f"Active port scanning is a reconnaissance technique used to identify exploitable services -- it directly precedes targeted exploitation attempts against discovered open ports. "
+            f"Block {src_ip} at the edge firewall, review which ports were targeted for open service exposure, and verify IDS/IPS signatures are current for detected scan patterns (Confidence: {confidence}%)."
+        )
     if "unauthorized" in reason:
-        return (f"Multiple HTTP 401s from {src_ip} — web credential brute-force attempt "
-                f"against authentication endpoint. Confidence: {confidence}%")
+        return (
+            f"Multiple HTTP 401 Unauthorized responses were generated for requests from {src_ip}, indicating repeated failed authentication attempts against a web application endpoint. "
+            f"Sustained 401 patterns from a single source are a strong indicator of credential brute-forcing or credential stuffing attacks targeting user accounts on the application. "
+            f"Implement IP-based rate limiting on the authentication endpoint, enable account lockout policies, and consider CAPTCHA enforcement to block automated login attacks (Confidence: {confidence}%)."
+        )
     if not log.get("is_anomaly"):
-        return f"Normal {log_type} traffic from {src_ip}. No suspicious patterns detected."
-    return (f"Anomalous {severity.lower()} activity from {src_ip} in {log_type} logs. "
-            f"Reason: {log.get('reason','Unknown')}. Confidence: {confidence}%")
+        return (
+            f"Normal {log_type} traffic was observed from {src_ip} with no anomalous patterns detected against baseline behavioral models. "
+            f"This activity falls within expected parameters and does not match any known threat signatures or statistical anomaly thresholds. "
+            f"No immediate action required -- continue standard monitoring and retain logs per data retention policy."
+        )
+    return (
+        f"Anomalous {severity.lower()} activity was detected from {src_ip} in {log_type} logs matching the pattern: {raw_reason}. "
+        f"This event deviates from established behavioral baselines and has been flagged for analyst review -- the specific pattern may indicate an emerging or novel threat vector. "
+        f"Investigate {src_ip} activity across all log sources, correlate with threat intelligence feeds, and escalate if additional indicators of compromise are found (Confidence: {confidence}%)."
+    )
+
+
+def _build_attack_summary(log):
+    """
+    Generate a concise kill-chain style attack_summary field.
+    Format: "Stage 1 -> Stage 2 -> Stage 3"
+    Based on reason, severity, log_type, and anomaly/compromise status.
+    """
+    reason   = log.get("reason", "").lower()
+    severity = log.get("severity", "INFO")
+    log_type = log.get("log_type", "unknown")
+    is_comp  = log.get("is_compromised", False)
+
+    if not log.get("is_anomaly"):
+        return "Normal activity -- no attack chain identified"
+
+    if is_comp:
+        return "Brute-force attack -> credential compromise -> unauthorized access achieved"
+
+    if "brute force" in reason:
+        return "Credential brute-force -> repeated authentication failures -> account lockout risk"
+
+    if "port scan" in reason or "repeated rejected" in reason:
+        return "Network reconnaissance -> port scanning -> service discovery -> targeted exploitation risk"
+
+    if "high traffic volume" in reason or "traffic spike" in reason:
+        if severity in ("CRITICAL", "HIGH"):
+            return "Anomalous outbound volume -> data staging -> potential exfiltration"
+        return "Traffic anomaly -> bandwidth abuse -> DDoS staging or bulk transfer"
+
+    if "authentication failures" in reason and log_type == "snmp":
+        return "SNMP probing -> management interface targeting -> network topology reconnaissance"
+
+    if "link flapping" in reason:
+        return "Interface instability -> network disruption -> availability impact"
+
+    if "unauthorized" in reason:
+        return "Web credential attack -> authentication bypass attempt -> application account compromise risk"
+
+    if "single failed login" in reason:
+        return "Opportunistic probing -> failed authentication -> low-confidence reconnaissance"
+
+    if severity == "CRITICAL":
+        return "Critical anomaly detected -> immediate threat indicator -> urgent analyst review required"
+    if severity == "HIGH":
+        return "High-severity anomaly -> active threat behavior -> escalation recommended"
+    if severity == "MEDIUM":
+        return "Suspicious activity -> behavioral deviation -> monitoring and investigation required"
+
+    return "Anomalous pattern detected -> threat indicator -> analyst review recommended"
 
 
 def _correlate_incidents(logs):
@@ -202,6 +291,7 @@ def _build_incidents(logs, timelines, compromised_ips):
             "explanation": explanation, "attack_chain": chain,
             "timeline": timelines.get(ip, []),
             "event_count": len(ip_l),
+            "attack_summary": _build_attack_summary(max_sev),
             "log_types": list(set(l.get("log_type","unknown") for l in ip_l)),
             "events": [{"severity": l.get("severity","INFO"), "log_type": l.get("log_type","unknown"),
                         "reason": l.get("reason",""), "source_ip": l.get("source_ip","unknown"),
@@ -269,6 +359,7 @@ def process_logs(raw_logs):
         e["risk_score"]       = risk
         e["explanation"]      = _advanced_explanation(e, conf)
         e["is_compromised"]   = is_comp and e.get("is_anomaly", False)
+        e["attack_summary"]   = _build_attack_summary(e)
     incidents = _build_incidents(enriched, timelines, compromised_ips)
     summary = generate_batch_explanation(enriched)
     top_sev = max(enriched, key=lambda l: _SEV_ORDER.get(l.get("severity","INFO"),1), default={})
@@ -278,12 +369,14 @@ def process_logs(raw_logs):
     for e in enriched:
         log_results.append({
             "severity": e["severity"], "is_anomaly": e.get("is_anomaly",False),
-            "reason": e.get("reason",""), "explanation": e.get("explanation",""),
+            "reason": e.get("reason",""),
+            "explanation": e.get("explanation",""),
             "confidence_score": e.get("confidence_score",50), "risk_score": e.get("risk_score",0),
             "source_ip": e.get("source_ip","unknown"), "timestamp": e.get("timestamp"),
             "log_type": e.get("log_type","unknown"),
             "incident": e.get("incident",False), "incident_reason": e.get("incident_reason",""),
             "is_compromised": e.get("is_compromised",False),
+            "attack_summary": e.get("attack_summary",""),
         })
     return {
         "summary": summary, "time_to_clarity": f"{round(time.time()-start,3)} sec",
@@ -308,11 +401,13 @@ def process_log(raw_log):
     enriched["confidence_score"] = 50 if enriched.get("is_anomaly") else 10
     enriched["risk_score"]       = 30 if enriched.get("severity") == "CRITICAL" else 15
     enriched["explanation"]      = _advanced_explanation(enriched, enriched["confidence_score"])
+    enriched["attack_summary"]    = _build_attack_summary(enriched)
     explanation = generate_explanation(enriched)
     return {
         "severity": enriched["severity"], "is_anomaly": enriched.get("is_anomaly",False),
         "reason": enriched.get("reason",""),
         "explanation": explanation or enriched["explanation"],
+        "attack_summary": enriched["attack_summary"],
         "confidence_score": enriched["confidence_score"], "risk_score": enriched["risk_score"],
         "source_ip": enriched.get("source_ip","unknown"), "timestamp": enriched.get("timestamp"),
         "log_type": enriched.get("log_type","unknown"),

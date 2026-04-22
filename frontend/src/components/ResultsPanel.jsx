@@ -84,7 +84,18 @@ function IncidentCard({ incident, onClick }) {
           </div>
         ))}
       </div>
-      <p className="text-xs text-slate-500 mt-2 truncate">{incident.explanation}</p>
+      <div className="mt-2 pt-2 border-t border-slate-700/30">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-semibold text-indigo-400">🧠 AI Insight</span>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">{incident.explanation}</p>
+        {incident.attack_summary && !incident.attack_summary.includes('Normal activity') && (
+          <div className="mt-2">
+            <span className="text-xs text-slate-500">⛓ </span>
+            <span className="text-xs text-slate-500 italic">{incident.attack_summary}</span>
+          </div>
+        )}
+      </div>
     </motion.div>
   )
 }

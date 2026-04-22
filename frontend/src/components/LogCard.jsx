@@ -110,7 +110,30 @@ export default function LogCard({ log, index }) {
               >
                 <div className="mt-3 pt-3 border-t border-slate-700/30">
                   {log.explanation && (
-                    <p className="text-xs text-slate-300 leading-relaxed">{log.explanation}</p>
+                    <div className="mb-2">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-xs font-semibold text-indigo-400">🧠 AI Insight</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-medium" style={{fontSize: 9, letterSpacing: '0.06em'}}>SOC GRADE</span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{log.explanation}</p>
+                    </div>
+                  )}
+                  {log.attack_summary && !log.attack_summary.includes('Normal activity') && (
+                    <div className="mt-2 pt-2 border-t border-slate-700/20">
+                      <span className="text-xs text-slate-500 font-medium">⛓ Attack Summary</span>
+                      <div className="flex flex-wrap items-center gap-1 mt-1">
+                        {log.attack_summary.split('->').map((part, i, arr) => (
+                          <span key={i} className="flex items-center gap-1">
+                            <span className={`text-xs px-1.5 py-0.5 rounded border font-medium ${
+                              i === 0 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                              : i === arr.length - 1 ? 'text-red-400 bg-red-500/10 border-red-500/20'
+                              : 'text-slate-400 bg-slate-700/40 border-slate-600/30'
+                            }`}>{part.trim()}</span>
+                            {i < arr.length - 1 && <span className="text-slate-600 text-xs">→</span>}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
                   {log.timestamp && (
                     <p className="text-xs text-slate-600 font-mono mt-2">{log.timestamp}</p>

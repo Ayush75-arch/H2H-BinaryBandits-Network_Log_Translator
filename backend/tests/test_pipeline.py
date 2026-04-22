@@ -157,9 +157,9 @@ def test_batch_response_structure():
     assert isinstance(result["logs"], list), "'logs' must be a list"
 
     for entry in result["logs"]:
-        assert "explanation" not in entry, (
-            "Individual log entries must NOT contain 'explanation' (lives in summary)"
-        )
+        assert "severity" in entry,  "Log entry must have 'severity'"
+        assert "reason" in entry,    "Log entry must have 'reason'"
+        assert "source_ip" in entry, "Log entry must have 'source_ip'"
     print("  PASS  test_batch_response_structure")
 
 

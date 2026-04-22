@@ -633,6 +633,7 @@ export default function App() {
               <LogDetailsPanel
                 log={selectedLog}
                 incident={selectedIncident}
+                recommendedActions={queryRecommendedActions}
                 onClose={clearSelection}
               />
             </div>

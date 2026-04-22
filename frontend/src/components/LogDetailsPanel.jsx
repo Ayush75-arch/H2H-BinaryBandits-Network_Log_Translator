@@ -69,7 +69,7 @@ function ScoreBar({ value, colorClass }) {
   )
 }
 
-export default function LogDetailsPanel({ log, incident, onClose }) {
+export default function LogDetailsPanel({ log, incident, recommendedActions, onClose }) {
   if (!log && !incident) {
     return (
       <div className="detail-panel" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
@@ -106,7 +106,7 @@ export default function LogDetailsPanel({ log, incident, onClose }) {
   const stages      = incident?.attack_chain?.stages        || []
   const stageReason = incident?.attack_chain?.stage_reasons || {}
   const timeline    = incident?.timeline                    || []
-  const recs        = incident?.recommended_actions         || []
+  const recs        = recommendedActions || incident?.recommended_actions || []
 
   return (
     <div className="detail-panel slide-in-right" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
@@ -176,14 +176,58 @@ export default function LogDetailsPanel({ log, incident, onClose }) {
         {reason}
       </Block>
 
-      {/* ── Explanation / AI Analysis ── */}
+      {/* ── AI Insight (Explanation + Attack Summary) ── */}
       {(log?.explanation || incident?.explanation) && (
-        <Block label="Explanation">
-          <span style={{ fontSize: 11.5, color: '#94a3b8', lineHeight: 1.7 }}>
+        <div className="detail-row" style={{ flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <span className="detail-label" style={{ marginBottom: 0 }}>🧠 AI Insight</span>
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
+              textTransform: 'uppercase', color: '#6366f1',
+              background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)',
+              borderRadius: 4, padding: '1px 5px',
+            }}>SOC Grade</span>
+          </div>
+          <span style={{
+            fontSize: 11.5, lineHeight: 1.8, color: '#cbd5e1',
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word', display: 'block',
+          }}>
             {log?.explanation || incident?.explanation}
           </span>
-        </Block>
+        </div>
       )}
+
+      {/* ── Attack Summary ── */}
+      {(log?.attack_summary || incident?.attack_summary) && (() => {
+        const summary = log?.attack_summary || incident?.attack_summary || ''
+        if (summary.includes('Normal activity')) return null
+        const parts = summary.split(/\s*->\s*/)
+        return (
+          <div className="detail-row" style={{ flexDirection: 'column', gap: 6 }}>
+            <span className="detail-label">⛓ Attack Summary</span>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+              {parts.map((part, i) => (
+                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 600,
+                    color: i === 0 ? '#f59e0b' : i === parts.length - 1 ? '#f87171' : '#94a3b8',
+                    background: i === 0
+                      ? 'rgba(245,158,11,0.1)' : i === parts.length - 1
+                      ? 'rgba(248,113,113,0.1)' : 'rgba(148,163,184,0.08)',
+                    border: `1px solid ${i === 0 ? 'rgba(245,158,11,0.25)' : i === parts.length - 1 ? 'rgba(248,113,113,0.25)' : 'rgba(148,163,184,0.15)'}`,
+                    borderRadius: 4, padding: '2px 7px',
+                  }}>
+                    {part.trim()}
+                  </span>
+                  {i < parts.length - 1 && (
+                    <span style={{ color: '#374151', fontSize: 11, fontWeight: 700 }}>→</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Risk + Confidence scores ── */}
       <div style={{ padding: '10px 14px', borderBottom: '1px solid #1a2332' }}>

@@ -31,7 +31,7 @@ from pipeline import process_log, process_logs
 from pipeline import (
     _detect_compromises, _build_timelines, _classify_attack_chain,
     _compute_scores, _advanced_explanation, _correlate_incidents,
-    _build_incidents, _build_recommendations, _SEV_ORDER,
+    _build_incidents, _build_recommendations, _SEV_ORDER, _build_attack_summary,
 )
 from parser.log_parser import parse_log
 from detection.anomaly_detector import detect_anomalies
@@ -142,14 +142,30 @@ class QueryRequest(BaseModel):
 # ── Guarantee reason/explanation fields ────────────────────────────────────────
 
 def _ensure_reason(entry: dict) -> dict:
-    """Every log must have non-empty 'reason' and 'explanation'."""
+    """Every log must have non-empty 'reason', 'explanation', and 'attack_summary'."""
     if not entry.get("reason"):
         entry["reason"] = "No specific trigger identified"
     if not entry.get("explanation"):
-        entry["explanation"] = (
-            f"Log from {entry.get('source_ip', 'unknown')} classified as "
-            f"{entry.get('severity', 'INFO')} — no anomaly pattern matched."
-        )
+        src = entry.get("source_ip", "unknown")
+        sev = entry.get("severity", "INFO")
+        log_type = entry.get("log_type", "unknown")
+        if entry.get("is_anomaly"):
+            entry["explanation"] = (
+                f"Anomalous {sev.lower()} activity was detected from {src} in {log_type} logs with no specific pattern match. "
+                f"This event deviates from established behavioral baselines and has been flagged for analyst review. "
+                f"Investigate {src} activity across all log sources and escalate if additional indicators of compromise are found."
+            )
+        else:
+            entry["explanation"] = (
+                f"Normal {log_type} traffic was observed from {src} with no anomalous patterns detected. "
+                f"This activity falls within expected parameters and does not match any known threat signatures. "
+                f"No immediate action required — continue standard monitoring."
+            )
+    if not entry.get("attack_summary"):
+        if entry.get("is_anomaly"):
+            entry["attack_summary"] = "Anomalous pattern detected -> threat indicator -> analyst review recommended"
+        else:
+            entry["attack_summary"] = "Normal activity -- no attack chain identified"
     return entry
 
 
@@ -299,6 +315,7 @@ async def _stream_generator(logs: list[str], delay_ms: int) -> AsyncGenerator[st
         this_entry["confidence_score"] = conf
         this_entry["risk_score"]       = risk
         this_entry["explanation"]      = _advanced_explanation(this_entry, conf)
+        this_entry["attack_summary"]   = _build_attack_summary(this_entry)
         this_entry["is_compromised"]   = is_comp and this_entry.get("is_anomaly", False)
         this_entry = _ensure_reason(this_entry)
         accumulated = enriched
@@ -327,6 +344,7 @@ async def _stream_generator(logs: list[str], delay_ms: int) -> AsyncGenerator[st
             "incident":         this_entry.get("incident", False),
             "incident_reason":  this_entry.get("incident_reason", ""),
             "is_compromised":   this_entry.get("is_compromised", False),
+            "attack_summary":   this_entry.get("attack_summary", ""),
             "stats":            stats,
         })
 
