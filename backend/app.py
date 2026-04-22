@@ -47,8 +47,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Network Log Translator", version="9.0.0")
 app.add_middleware(
-    CORSMiddleware, allow_origins=["https://h2-h-binary-bandits-network-log-translator-1veu02ycp.vercel.app",
-    "http://localhost:5173"], allow_credentials=True,
+    CORSMiddleware, allow_origins=[ "https://h2-h-binary-bandits-network-log-translator-1veu02ycp.vercel.app",
+        "https://h2-h-binary-bandits-network-log-tra.vercel.app",
+        "http://localhost:5173"], allow_credentials=True,
     allow_methods=["*"], allow_headers=["*"],
 )
 
