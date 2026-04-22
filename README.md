@@ -1,256 +1,177 @@
+# Network Log Translator
+### Turn raw network logs into plain English — instantly.
 
-# 🚀 AI-Powered Network Log Translator
-
-## 📌 Overview
-
-The **AI-Powered Network Log Translator** is a cybersecurity tool that converts raw network logs (Syslog, SNMP, AWS VPC Flow Logs) into **human-readable insights** using parsing, anomaly detection, and AI-based summarization.
-
-It helps reduce **incident response time** by making complex logs understandable for both technical and non-technical users.
+![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python) ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green?logo=fastapi) ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react) ![Groq](https://img.shields.io/badge/LLM-Groq%20%2F%20LLaMA%203.1-orange) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black?logo=vercel)
 
 ---
 
-## 🎯 Problem Statement
+## Problem Statement
 
-Network logs are:
-
-* Complex and hard to read
-* Time-consuming to analyze manually
-* Difficult for non-experts to interpret
-
-➡️ This leads to **delayed incident response** and missed threats.
-
----
-
-## 💡 Solution
-
-This project:
-
-1. Parses raw logs into structured data
-2. Detects anomalies (rule-based + optional ML)
-3. Classifies severity levels
-4. Uses AI to generate **plain English explanations**
-
----
-
-## 🧱 Architecture
+Network logs are the ground truth of what's happening inside a system — but they're written for machines, not people. A single security event can scatter context across dozens of raw lines like:
 
 ```
-Raw Logs
-   ↓
-Parser (Regex / Log Extraction)
-   ↓
-Structured JSON
-   ↓
-Anomaly Detection
-   ↓
-Log Classification
-   ↓
-AI Summarization (LLM)
-   ↓
-Human-Readable Output / Dashboard
+Apr 15 10:14:55 server sshd[1234]: Failed password for root from 192.168.1.10 port 22 ssh2
 ```
+
+SOC analysts spend **minutes to hours** manually correlating these entries, figuring out what happened, how severe it is, and what to do next. For non-technical stakeholders, the logs might as well be binary. This delay between an event occurring and someone understanding it is where breaches slip through.
 
 ---
 
-## ⚙️ Tech Stack
+## Proposed Solution
 
-* **Python**
-* **Pandas** – data handling
-* **Regex** – log parsing
-* **OpenAI / LLM API** – natural language generation
-* **Scikit-learn (optional)** – anomaly detection
-* **FastAPI (optional)** – API backend
-* **JSON / CSV logs**
+Network Log Translator is an end-to-end pipeline that takes raw Syslog, SNMP trap, and AWS VPC Flow logs and converts them into structured, human-readable incident reports — in seconds.
+
+It doesn't just parse. It detects anomalies, correlates related events into incidents, scores risk, and generates plain-English explanations using an LLM. The result is something a junior analyst *or* a non-technical manager can read and act on immediately.
+
+What makes it different: the **Time-to-Clarity (TTC)** metric — we explicitly benchmark how fast the system goes from raw log input to an understandable, actionable insight.
 
 ---
 
-## 📂 Project Structure
+## Tech Stack
 
-```
-ai-log-translator/
-│
-├── logs/
-│   ├── syslog.log
-│   ├── snmp.log
-│   └── vpc_flow.log
-│
-├── parser/
-│   └── log_parser.py
-│
-├── detection/
-│   └── anomaly_detector.py
-│
-├── classification/
-│   └── classifier.py
-│
-├── summarizer/
-│   └── llm_summarizer.py
-│
-├── pipeline.py
-├── app.py (optional FastAPI)
-├── requirements.txt
-└── README.md
-```
+| Layer | Tools |
+|---|---|
+| **Backend** | Python 3.11, FastAPI, Uvicorn |
+| **Log Parsing** | Custom regex-based parser (Syslog, SNMP, VPC) |
+| **Anomaly Detection** | Rule-based engine + Isolation Forest (scikit-learn) |
+| **AI Summarization** | Groq API — LLaMA 3.1 8B Instant |
+| **Frontend** | React 18, Vite, Tailwind CSS, Framer Motion |
+| **Deployment** | Vercel (frontend), Render (backend) |
+| **Other** | Pydantic, python-dotenv, SSE (streaming responses) |
 
 ---
 
-## 🔍 Features
+## Features
 
-### ✅ Log Parsing
-
-* Extracts:
-
-  * Timestamp
-  * Source IP
-  * Severity
-  * Message
-
-* Supports:
-
-  * Syslog
-  * SNMP traps
-  * AWS VPC Flow Logs
+- **Multi-format log parsing** — handles Syslog, SNMP traps, and AWS VPC Flow Logs out of the box
+- **Anomaly detection** — flags brute-force attempts, port scans, traffic spikes, and repeated auth failures
+- **Incident correlation** — groups related log entries into named incidents with attack chain classification
+- **AI-powered explanations** — LLaMA 3.1 generates plain-English summaries per log entry and per incident
+- **Risk scoring** — every log and incident gets a severity score (INFO → CRITICAL) with reasoning
+- **Natural language querying** — ask questions about the analyzed logs in plain English via a chat-style query panel
+- **Live streaming** — results stream back via SSE so the UI updates progressively, not all at once
+- **Benchmark mode** — built-in TTC (Time-to-Clarity) benchmarking to measure pipeline performance
+- **Compromise detection** — cross-references failed and successful auth events to surface potentially compromised hosts
 
 ---
 
-### 🚨 Anomaly Detection
-
-* Rule-based detection:
-
-  * Repeated login failures
-  * Port scanning
-  * Traffic spikes
-
-* Optional ML:
-
-  * Isolation Forest (outlier detection)
-
----
-
-### 🏷️ Log Classification
-
-Each log is categorized as:
-
-* 🔴 **Critical** – attacks, failures, intrusions
-* 🟡 **Warning** – unusual activity
-* 🟢 **Informational** – normal operations
-
----
-
-### 🤖 AI-Powered Explanation
-
-Example:
-
-**Input Log:**
+## Architecture / Flow
 
 ```
-Failed SSH login from 192.168.1.10 on port 22
-```
-
-**Output:**
-
-```
-A device at IP 192.168.1.10 attempted to access the system via SSH but failed authentication. This may indicate unauthorized access attempts.
+Raw Log Input (Syslog / SNMP / VPC)
+            │
+            ▼
+     ┌─────────────┐
+     │  Log Parser  │  ← regex extraction: timestamp, source IP, event, host
+     └──────┬──────┘
+            │ Structured JSON
+            ▼
+  ┌──────────────────┐
+  │ Anomaly Detector │  ← rule-based + optional Isolation Forest
+  └────────┬─────────┘
+           │ flagged entries
+           ▼
+  ┌─────────────────┐
+  │   Classifier    │  ← severity tagging: INFO / LOW / MEDIUM / HIGH / CRITICAL
+  └────────┬────────┘
+           │
+           ▼
+  ┌──────────────────────┐
+  │  Pipeline (v7)       │  ← incident correlation, compromise detection,
+  │                      │    attack chain classification, risk scoring
+  └────────┬─────────────┘
+           │
+           ▼
+  ┌──────────────────────┐
+  │   LLM Summarizer     │  ← Groq / LLaMA 3.1 generates human-readable
+  │   (llm_summarizer)   │    explanation per log + per incident
+  └────────┬─────────────┘
+           │
+           ▼
+  ┌──────────────────────┐
+  │   FastAPI (app.py)   │  ← REST + SSE endpoints, query interface,
+  │                      │    context persistence between requests
+  └────────┬─────────────┘
+           │
+           ▼
+  ┌──────────────────────┐
+  │  React Dashboard     │  ← log table, incident modal, query panel,
+  │                      │    benchmark view, streaming results
+  └──────────────────────┘
 ```
 
 ---
 
-## 🚀 Installation
+## Setup Instructions
+
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- A [Groq API key](https://console.groq.com) (free tier works)
+
+### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/ai-log-translator.git
-cd ai-log-translator
+git clone https://github.com/Ayush75-arch/H2H-BinaryBandits-Network_Log_Translator.git
+cd H2H-BinaryBandits-Network_Log_Translator
+```
 
+### 2. Set up the backend
+
+```bash
+cd backend
 pip install -r requirements.txt
 ```
 
----
-
-## 🔑 Environment Setup
-
-Create a `.env` file:
+Create a `.env` file in the `backend/` directory:
 
 ```
-OPENAI_API_KEY=your_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
----
-
-## ▶️ Usage
-
-Run the pipeline:
+Start the backend server:
 
 ```bash
-python pipeline.py
+uvicorn app:app --reload --port 8000
 ```
 
-Optional (API mode):
+### 3. Set up the frontend
 
 ```bash
-uvicorn app:app --reload
+cd ../frontend
+npm install
+npm run dev
 ```
 
----
+The app will be running at `http://localhost:5173`.
 
-## 📊 Output Example
+### 4. Using the app
 
-```json
-{
-  "timestamp": "2026-04-15 10:15:23",
-  "source_ip": "192.168.1.10",
-  "severity": "HIGH",
-  "category": "CRITICAL",
-  "anomaly": true,
-  "summary": "Multiple failed login attempts detected, indicating a possible brute-force attack."
-}
-```
+- Paste raw log text into the input panel and select the log type (Syslog / SNMP / VPC)
+- Hit **Analyze** — results stream in live
+- Click any log entry to see the full AI explanation
+- Use the **Query** panel to ask natural language questions about the analyzed logs
+- Switch to **Benchmark** mode to measure Time-to-Clarity performance
 
 ---
 
-## ⏱️ Time-to-Clarity Metric
+## Demo / Screenshots
 
-This project measures:
+> 
 
-> ⏳ Time taken from raw log → understandable insight
-
-### Goal:
-
-Reduce analysis time from **minutes → seconds**
+**Live deployment:** [https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app](https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app)
 
 ---
 
-## 🔐 Security Use Cases
+## Team Members
 
-* SOC (Security Operations Center)
-* Incident response automation
-* Threat detection
-* Log monitoring systems (SIEM enhancement)
-
----
-
-## 🔮 Future Improvements
-
-* Real-time log streaming (Kafka integration)
-* Dashboard (React + charts)
-* Multi-language explanations
-* Integration with SIEM tools (Splunk, ELK)
-* Advanced ML models for anomaly detection
+| Name | Role | GitHub |
+|---|---|---|
+| Ayush Krishnan P | Backend, Pipeline, AI Integration | [@Ayush75-arch](https://github.com/Ayush75-arch) |
+| Hithashree P | Frontend, UI/UX, Integration |[@HITHASHREE-GIT] https://github.com/HITHASHREE-GIT |
 
 ---
 
-## 🤝 Contributing
+## Deployed Link
 
-Pull requests are welcome. For major changes, please open an issue first.
-
----
-
-## 📜 License
-
-MIT License
-
----
-
-## 👨‍💻 Author
-
-Ayush Krishnan P & Hithashree P
-
+🔗 **[https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app](https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app)**
