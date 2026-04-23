@@ -3,9 +3,9 @@ https://h2-h-binary-bandits-network-log-tra.vercel.app/
 
 
 #YOUTUBE LINK - 
-https://youtu.be/MiMeLyFchn8
+https://youtu.be/bo1eeIC0isc
 
-# PLEASE WAIT 20-30 SECONDS FOR THE DEPLOYEMENT LINK TO PROPERLY CONNECT
+# PLEASE WAIT 20-30 SECONDS FOR THE DEPLOYEMENT LINK TO PROPERLY CONNECT OR RELOAD THE SITE AGAIN 
 
 <img width="573" height="48" alt="image" src="https://github.com/user-attachments/assets/dbcac579-10b0-4ea1-99a3-61fde8234796" />
 
@@ -174,7 +174,7 @@ The app will be running at `http://localhost:5173`.
 ## Demo / Screenshots
 
 > #YOUTUBE LINK - 
-https://youtu.be/MiMeLyFchn8
+https://youtu.be/bo1eeIC0isc
 >
 > **Live deployment:** [https://h2-h-binary-bandits-network-log-tra.vercel.app/](https://h2-h-binary-bandits-network-log-tra.vercel.app/)
 
