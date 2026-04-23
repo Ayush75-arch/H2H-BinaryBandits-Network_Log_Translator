@@ -5,6 +5,12 @@ https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app
 #YOUTUBE LINK - 
 https://youtu.be/MiMeLyFchn8
 
+# PLEASE WAIT 20-30 SECONDS FOR THE DEPLOYEMENT LINK TO PROPERLY CONNECT
+
+<img width="573" height="48" alt="image" src="https://github.com/user-attachments/assets/dbcac579-10b0-4ea1-99a3-61fde8234796" />
+
+
+
 
 
 
