@@ -167,9 +167,10 @@ The app will be running at `http://localhost:5173`.
 
 ## Demo / Screenshots
 
-> 
-
-**Live deployment:** [https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app](https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app)
+> #YOUTUBE LINK - 
+https://youtu.be/WBF4HeHHGMA
+>
+> **Live deployment:** [https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app](https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app)
 
 ---
 
