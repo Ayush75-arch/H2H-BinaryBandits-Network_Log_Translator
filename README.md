@@ -1,3 +1,9 @@
+DEPLOYEMENT LINK - https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app
+YOUTUBE LINK - https://youtu.be/WBF4HeHHGMA
+
+
+
+
 # Network Log Translator
 ### Turn raw network logs into plain English — instantly.
 
