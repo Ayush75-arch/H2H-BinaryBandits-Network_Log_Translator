@@ -1,5 +1,5 @@
 #DEPLOYEMENT LINK - 
-https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app
+https://h2-h-binary-bandits-network-log-tra.vercel.app/
 
 
 #YOUTUBE LINK - 
@@ -176,7 +176,7 @@ The app will be running at `http://localhost:5173`.
 > #YOUTUBE LINK - 
 https://youtu.be/MiMeLyFchn8
 >
-> **Live deployment:** [https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app](https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app)
+> **Live deployment:** [https://h2-h-binary-bandits-network-log-tra.vercel.app/](https://h2-h-binary-bandits-network-log-tra.vercel.app/)
 
 ---
 
@@ -191,4 +191,4 @@ https://youtu.be/MiMeLyFchn8
 
 ## Deployed Link
 
-🔗 **[https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app](https://h2-h-binary-bandits-network-log-translator-i1vowmdke.vercel.app)**
+🔗 **[https://h2-h-binary-bandits-network-log-tra.vercel.app/](https://h2-h-binary-bandits-network-log-tra.vercel.app/)**
